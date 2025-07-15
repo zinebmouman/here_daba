@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  vite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    command: ["npm", "run", "dev", "--", "--host"]
+    restart: unless-stopped
+    depends_on:
+      - minio
+    environment:
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET=boutique-images
+      - MINIO_USE_SSL=false
+      - VITE_API_BASE_URL=http://localhost:8080    # 🔥 CORRIGÉ
+      - VITE_BACKEND_URL=http://localhost:8080
+      - VITE_GOOGLE_MAPS_API_KEY=AIzaSyD_MIvm3dKZdlxJAZa1fY9kRv4wMa_rpus
+    networks:
+      - frontend-network
+      - microservices-network
+    extra_hosts:
+      - "api-gateway:host-gateway"
+
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server --console-address ":9001" /data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - frontend-network
+      - microservices-network
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb --ignore-existing myminio/boutique-images;
+      /usr/bin/mc policy set public myminio/boutique-images;
+      exit 0;
+      "
+    networks:
+      - frontend-network
+      - microservices-network 
+
+volumes:
+  minio_data:
+
+networks:
+  frontend-network:
+    driver: bridge
+  microservices-network:    # 🔥 CORRIGÉ : Indentation fixée
+    external: true

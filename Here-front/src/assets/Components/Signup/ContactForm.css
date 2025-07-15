@@ -1,0 +1,42 @@
+/* ContactForm.css */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap');
+
+.form-container {
+  position: relative;
+  width: 496px;
+  height: 412px;
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Remove default browser styling */
+input, select {
+  box-sizing: border-box;
+}
+
+input:focus, select:focus {
+  outline: none;
+}
+
+/* Remove default dropdown arrow in Firefox */
+select {
+  -moz-appearance: none;
+}
+
+/* Remove default dropdown arrow in IE10+ */
+select::-ms-expand {
+  display: none;
+}
+
+/* Custom dropdown arrow styling */
+.dropdown-icon::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid rgba(92, 95, 98, 0.5);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}

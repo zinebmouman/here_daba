@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+.all{
+    font-family: 'Droid Sans', Arial, sans-serif;
+}
+.Signup{
+    background-color: #F5F5F5;
+}
+.hero{
+    background-color: #F6F7FB;
+    border-radius: 64px;
+}
+.fullbody{
+    font-family:'Montserrat', Arial, sans-serif;
+}
+.stext{
+    color: #00CC96;
+}
+.btn1{
+    background-color: #00CC96;
+}
+.catcard{
+    height: 128px;
+    width: 128px;
+    background-color: #F6F7FB;
+    border-radius: 24px;
+}
+.iconcard{
+    color: #00CC96;
+}
+@media (min-width: 1024px) { /* Adjust the min-width as per your design */
+    .hero {
+        height: 400px; /* Height for large screens */
+        padding-left: 124px;
+        padding-right: 124px;
+        
+    }
+}
+/* categories.css */
+.catcard {
+    background-color: #f9fafb;
+    border-radius: 0.75rem;
+  }
+  
+  .catcard:hover {
+    background-color: #f3f4f6;
+  }
+  
+  .iconcard {
+    color: #10b981; /* teal-500 in Tailwind */
+  }
+  .modalS{
+    background-color: #00000091;
+  }
+  .modalfS{
+    border-radius: 33px;
+  }
+  .Inputs{
+    border-radius: 32px;
+    font-family: 'Montserrat';
+    border: 2px solid #F6F7FB;
+    
+  }
+  .Labels{
+    font-family:'Montserrat' ;
+
+  }

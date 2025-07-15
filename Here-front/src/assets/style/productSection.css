@@ -1,0 +1,21 @@
+/* productSection.css */
+
+.product-card-wrapper {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .product-card-wrapper:hover {
+    transform: scale(1.05); /* Small zoom effect */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Light shadow */
+    z-index: 10; /* Ensure hovered card appears above others */
+  }
+  
+  /* Fix for the scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
