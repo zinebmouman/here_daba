@@ -22,6 +22,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import io.minio.MinioClient;
+import io.minio.GetPresignedObjectUrlArgs;
+import io.minio.http.Method;
 
 @Service
 public class MinIOService {
@@ -386,5 +389,17 @@ public class MinIOService {
         }
 
         return stats;
+    }
+
+
+    public String getPresignedUploadUrl(String bucketName, String objectName) throws Exception {
+        return minioClient.getPresignedObjectUrl(
+                GetPresignedObjectUrlArgs.builder()
+                        .method(Method.PUT)
+                        .bucket(bucketName)
+                        .object(objectName)
+                        .expiry(600) // 10 min
+                        .build()
+        );
     }
 }

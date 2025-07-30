@@ -10,7 +10,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import io.minio.GetPresignedObjectUrlArgs;
+import io.minio.http.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -269,6 +270,29 @@ public class MinIOUploadController {
         } catch (Exception e) {
             logger.warn("⚠️ Impossible d'extraire le nom de fichier de l'URL: {}", imageUrl);
             return null;
+        }
+    }
+
+    @GetMapping("/presigned-upload")
+    public ResponseEntity<Map<String, String>> generatePresignedUploadUrl(
+            @RequestParam String fileName,
+            @RequestParam(required = false) String vendeurId) {
+        try {
+            String bucketName = "here-bucket";
+            String objectKey = (vendeurId != null ? vendeurId + "/" : "") + fileName;
+
+            // ✅ Génération d'une URL signée valide 10 minutes
+            String presignedUrl = minioService.getPresignedUploadUrl(bucketName, objectKey);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("url", presignedUrl);
+            response.put("fileKey", objectKey);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 }

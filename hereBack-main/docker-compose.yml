@@ -1,420 +1,179 @@
 ﻿version: '3.8'
 
 services:
-  # Base de donnÃ©es pour Auth Service
-  auth-db:
+  postgres:
     image: postgres:15
-    container_name: auth-db
-    ports:
-      - "5433:5432"
+    container_name: postgres
+    restart: always
     environment:
-      POSTGRES_DB: Authentification
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
-    volumes:
-      - auth_db_data:/var/lib/postgresql/data
-    networks:
-      - microservices-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  # Base de donnÃ©es pour Product Service
-  product-db:
-    image: postgres:15
-    container_name: product-db
+      POSTGRES_PASSWORD: zineb123
+      POSTGRES_DB: defaultdb
     ports:
-      - "5434:5432"
-    environment:
-      POSTGRES_DB: BoutiqueProduit
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
+      - "5432:5432"
     volumes:
-      - product_db_data:/var/lib/postgresql/data
-    networks:
-      - microservices-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d  # scripts SQL pour créer toutes les bases
 
-  # Base de donnÃ©es pour Stock Service
-  stock-db:
-    image: postgres:15
-    container_name: stock-db
-    ports:
-      - "5435:5432"
-    environment:
-      POSTGRES_DB: Stock
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
-    volumes:
-      - stock_db_data:/var/lib/postgresql/data
-    networks:
-      - microservices-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
 
-  # Base de donnÃ©es pour Payment Service
-  payment-db:
-    image: postgres:15
-    container_name: payment-db
-    ports:
-      - "5436:5432"
-    environment:
-      POSTGRES_DB: paiement
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
-    volumes:
-      - payment_db_data:/var/lib/postgresql/data
-    networks:
-      - microservices-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
 
-  # Base de donnÃ©es pour Cart Service
-  cart-db:
-    image: postgres:15
-    container_name: cart-db
-    ports:
-      - "5437:5432"
-    environment:
-      POSTGRES_DB: CartService
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
-    volumes:
-      - cart_db_data:/var/lib/postgresql/data
-    networks:
-      - microservices-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  # Base de donnÃ©es pour Notification Service
-  notification-db:
-    image: postgres:15
-    container_name: notification-db
-    ports:
-      - "5438:5432"
-    environment:
-      POSTGRES_DB: Notification
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
-    volumes:
-      - notification_db_data:/var/lib/postgresql/data
-    networks:
-      - microservices-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  # RabbitMQ
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    networks:
-      - microservices-network
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
 
-  # Redis
   redis:
-    image: redis:7-alpine
+    image: redis:alpine
     container_name: redis
     ports:
       - "6379:6379"
-    networks:
-      - microservices-network
+
   minio:
-    image: minio/minio:latest
+    image: minio/minio
     container_name: minio
     ports:
-      - "9000:9000"   # API MinIO
-      - "9001:9001"   # Console Web
-    volumes:
-      - minio_data:/data
+      - "9000:9000"
+      - "9001:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin123
-      # Pas besoin de MINIO_SERVER_URL ici, évite la confusion
-    command: server /data --console-address ":9001" --address ":9000"
-    restart: unless-stopped
-    networks:
-      - microservices-network
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
 
-
-
-  createbuckets:
-    image: minio/mc
-    depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set myminio http://minio:9000 minioadmin minioadmin123;
-      mc mb --ignore-existing myminio/boutique-images;
-      mc policy set public myminio/boutique-images;
-      exit 0;
-      "
-    networks:
-      - microservices-network
-
-  # Eureka Server
-  eureka-server:
-    build: ./eurekaserver
-    container_name: eureka-server
-    ports:
-      - "8761:8761"
-    networks:
-      - microservices-network
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  # API Gateway
   api-gateway:
-    build: "./API Gateway"
+    build: ./API Gateway
     container_name: api-gateway
     ports:
-      - "8080:8081"
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-    networks:
-      - microservices-network
+      - "9091:9091"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka
+    depends_on:
+      - eureka
 
-  # Auth Service
-  auth-service:
-    build: ./Authentification
-    container_name: auth-service
+  eureka:
+    build: ./eurekaserver
+    container_name: eureka
     ports:
-      - "8081:8080"
-    depends_on:
-      eureka-server:
-        condition: service_started
-      auth-db:
-        condition: service_healthy
-    networks:
-      - microservices-network
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://auth-db:5432/Authentification
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=admin
-      - VITE_API_BASE_URL=http://localhost:8080  # Port externe (host)
-      - VITE_BACKEND_URL=http://localhost:8080   # Port externe (host)
-      - VITE_GOOGLE_MAPS_API_KEY=AIzaSyD_MIvm3dKZdlxJAZa1fY9kRv4wMa_rpus
-  # Product Service
-  product-service:
-    build: ./Boutique-Catalogue-Produits
-    container_name: product-service
+      - "8761:8761"
+
+  authentification:
+    build:
+      context: ./Authentification
+      dockerfile: Dockerfile
+    container_name: authentification
     ports:
-      - "8082:8082"
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      product-db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
-    networks:
-      - microservices-network
+      - "8080:8080"
     volumes:
-      - ./Boutique-Catalogue-Produits/uploads/images:/app/uploads/images
+      - ./firebase-service-account.json:/app/firebase-service-account.json:ro
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://product-db:5432/BoutiqueProduit
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/authentification
       - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=admin
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_RABBITMQ_HOST=rabbitmq
-      - GEMINI_API_KEY=AIzaSyAMqDwrIenlBqNQBAlJ8KKOejBx6ghahBY
-      - GEMINI_API_URL=https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent
-      - file.upload-dir=/app/uploads/images
-
-  # Stock Service
-  stock-service:
-    build: ./Gestion-Stocks
-    container_name: stock-service
-    ports:
-      - "8083:8083"
+      - SPRING_DATASOURCE_PASSWORD=zineb123
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - FIREBASE_CONFIG_PATH=/app/firebase-service-account.json
     depends_on:
-      eureka-server:
-        condition: service_started
-      stock-db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    networks:
-      - microservices-network
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://stock-db:5432/Stock
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=admin
-      - SPRING_RABBITMQ_HOST=rabbitmq
+      - postgres
+      - eureka
 
-  # Payment Service
-  payment-service:
-    build: "./Service Paiement"
-    container_name: payment-service
+
+
+  boutique-service:
+    build: ./Boutique-Catalogue-Produits
+    container_name: boutique-service
     ports:
-      - "8086:8086"
-    depends_on:
-      eureka-server:
-        condition: service_started
-      payment-db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    networks:
-      - microservices-network
+      - "9090:9090"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://payment-db:5432/paiement
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/boutiqueproduit
       - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_DATASOURCE_PASSWORD=zineb123
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - MINIO_ENDPOINT=http://minio:9000
+      - REDIS_HOST=redis
       - SPRING_RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - postgres
+      - eureka
+      - minio
+      - redis
+      - rabbitmq
 
-  # Cart Service
   cart-service:
-    build: "./Cart Service"
+    build: ./Cart Service
     container_name: cart-service
     ports:
       - "8087:8087"
-    depends_on:
-      eureka-server:
-        condition: service_started
-      cart-db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    networks:
-      - microservices-network
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://cart-db:5432/CartService
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/cartservice
       - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_DATASOURCE_PASSWORD=zineb123
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - postgres
+      - rabbitmq
+      - eureka
 
-  # Notification Service
-  notification-service:
-    build: ./Notifications_Message
-    container_name: notification-service
+  gestion-stocks:
+    build: ./Gestion-Stocks
+    container_name: gestion-stocks
     ports:
-      - "8085:8085"
-    depends_on:
-      eureka-server:
-        condition: service_started
-      notification-db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    networks:
-      - microservices-network
+      - "8084:8084"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://notification-db:5432/Notification
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/stock
       - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_DATASOURCE_PASSWORD=zineb123
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
-  frontend:
+    depends_on:
+      - postgres
+      - rabbitmq
+      - eureka
+  ai-service:
+    build: ./ai-microservice
+    container_name: ai-service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - minio
+    environment:
+      DATABASE_URL: postgresql://postgres:zineb123@postgres:5432/boutiqueproduit
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET_NAME: boutique-images
+      MINIO_PUBLIC_URL: http://minio:9000
+      MINIO_SECURE: "false"
+
+  mobile-frontend:
     build:
-      context: ../Here-front
-      dockerfile: Dockerfile
-    container_name: frontend
+      context: ./here_mobile
+    container_name: mobile-frontend
+    env_file: .env            # contient NGROK_AUTHTOKEN=xxxxxxxx
+    environment:
+      EXPO_DEVTOOLS_LISTEN_ADDRESS: 0.0.0.0
+      CI: "false"
+    stdin_open: true          # pour voir le QR Code en temps réel
+    tty: true
     ports:
-      - "5174:5173"
+      - "19000:19000"
+      - "19001:19001"
+      - "19002:19002"
+      - "8081:8081"
+      - "19006:19006"         # (optionnel) DevTools
     depends_on:
-      api-gateway:
-        condition: service_started
-      minio:
-        condition: service_healthy
-    networks:
-      - microservices-network
-    environment:
-      # Variables d'environnement pour le frontend
-      - VITE_API_BASE_URL=http://localhost:8080
-      - VITE_BACKEND_URL=http://localhost:8080
-      - VITE_GOOGLE_MAPS_API_KEY=AIzaSyD_MIvm3dKZdlxJAZa1fY9kRv4wMa_rpus
-    volumes:
-      - ../Here-front:/app
-      - /app/node_modules
-    command: [ "npm", "run", "dev", "--", "--host","0.0.0.0", "--port", "5174"]
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-    extra_hosts:
-        - "host.docker.internal:host-gateway"
-    cap_add:
-      - NET_ADMIN
+      - api-gateway
 
-  # pgAdmin - Interface graphique PostgreSQL
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin
-    ports:
-      - "5050:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    networks:
-      - microservices-network
-    restart: unless-stopped
+
+
+
+
+
 
 volumes:
-  auth_db_data:
-  product_db_data:
-  stock_db_data:
-  payment_db_data:
-  cart_db_data:
-  notification_db_data:
-  product_uploads:
+  pgdata:
   minio_data:
-  product_images:
 
-networks:
-  microservices-network:
-    driver: bridge

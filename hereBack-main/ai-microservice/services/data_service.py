@@ -50,9 +50,10 @@ class DataService:
                 # ✅ CORRECTION: Bien récupérer l'URL d'image et la convertir pour l'émulateur
                 image_url = row.image_url
                 if image_url:
-                    # Convertir localhost vers 10.0.2.2 pour Android Emulator
-                    image_url = image_url.replace('localhost:9000', '10.0.2.2:9000')
-                    image_url = image_url.replace('127.0.0.1:9000', '10.0.2.2:9000')
+                    # Convertir localhost vers 192.168.41.39 pour Android Emulator
+                    image_url = image_url.replace('localhost:9000', '192.168.41.39:9000')
+                    image_url = image_url.replace('127.0.0.1:9000', '192.168.41.39:9000')
+                    image_url = image_url.replace('minio:9000', '192.168.41.39:9000')
                 
                 product_data = {
                     'id': row.id,
@@ -120,7 +121,7 @@ class DataService:
             # Convertir pour l'émulateur
             image_url = result.image_url
             if image_url:
-                image_url = image_url.replace('localhost:9000', '10.0.2.2:9000')
+                image_url = image_url.replace('localhost:9000', '192.168.41.39:9000')
             
             return {
                 'id': result.id,
@@ -204,7 +205,7 @@ class DataService:
             for row in query:
                 image_url = row.image_url
                 if image_url:
-                    image_url = image_url.replace('localhost:9000', '10.0.2.2:9000')
+                    image_url = image_url.replace('localhost:9000', '192.168.41.39:9000')
                 
                 result.append({
                     'id': row.id,
@@ -249,7 +250,7 @@ class DataService:
                 # Convertir l'URL pour l'émulateur
                 image_url = product.image_url
                 if image_url:
-                    image_url = image_url.replace('localhost:9000', '10.0.2.2:9000')
+                    image_url = image_url.replace('localhost:9000', '192.168.41.39:9000')
                 
                 similarity_score = 0.95 - (i * 0.05)  # Score décroissant
                 results.append({
@@ -297,7 +298,7 @@ class DataService:
             for row in results:
                 image_url = row.image_url
                 if image_url:
-                    image_url = image_url.replace('localhost:9000', '10.0.2.2:9000')
+                    image_url = image_url.replace('localhost:9000', '192.168.41.39:9000')
                 
                 products.append({
                     'id': row.id,
@@ -377,7 +378,7 @@ class DataService:
         
         # Convertir pour l'émulateur
         if main_image:
-            main_image = main_image.replace('localhost:9000', '10.0.2.2:9000')
+            main_image = main_image.replace('localhost:9000', '192.168.41.39:9000')
         
         return {
             'id': product.id,
@@ -406,5 +407,5 @@ class DataService:
         if image_path:
             url = f"{self.minio_public_url}/{self.bucket_name}/{image_path}"
             # Convertir pour l'émulateur Android
-            return url.replace('localhost:9000', '10.0.2.2:9000')
+            return url.replace('localhost:9000', '192.168.41.39:9000')
         return None

@@ -479,4 +479,21 @@ public class AuthController {
         return null;
     }
 
+
+    @PostMapping("/login/google")
+    public ResponseEntity<Map<String, Object>> loginWithGoogle(@RequestBody Map<String, String> payload) {
+        try {
+            String idToken = payload.get("idToken");
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+            String uid = decodedToken.getUid();
+            String email = decodedToken.getEmail();
+            String name = decodedToken.getName();
+
+            Map<String, Object> result = authService.registerGoogleUser(email, name, uid);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
+        }
+    }
+
 }

@@ -18,7 +18,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
+import org.hibernate.Hibernate;
 @Service
 public class BoutiqueService {
     private static final Logger logger = LoggerFactory.getLogger(BoutiqueService.class);
@@ -311,12 +311,18 @@ public class BoutiqueService {
         return boutiqueRepository.save(boutique);
     }
 
+
+    @Transactional(readOnly = true)
     public Set<Categorie> getBoutiqueCategories(Integer idBoutique) {
         Boutique boutique = boutiqueRepository.findById(idBoutique)
                 .orElseThrow(() -> new RuntimeException("Boutique non trouvée avec l'ID: " + idBoutique));
 
+        // Forcer l'initialisation des catégories (résout LazyInitializationException)
+        Hibernate.initialize(boutique.getCategories());
+
         return boutique.getCategories();
     }
+
 
     public List<String> getImagesByBoutiqueId(Integer boutiqueId) {
         Boutique boutique = boutiqueRepository.findById(boutiqueId)
@@ -730,6 +736,8 @@ public class BoutiqueService {
             return Collections.emptyList();
         }
     }
+
+
 
 
 }

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface CategorieRepository extends JpaRepository<Categorie, String> {
@@ -20,5 +21,11 @@ public interface CategorieRepository extends JpaRepository<Categorie, String> {
     List<Categorie> findAllForDebugging();
     @Query("SELECT c FROM Categorie c JOIN c.boutiques b WHERE b.id_boutique = :idBoutique")
     List<Categorie> findByBoutiqueId(@Param("idBoutique") Integer idBoutique);
+
+
+    @Query(value = "SELECT c.* FROM categorie c " +
+            "JOIN boutique_categorie bc ON c.id_categorie = bc.id_categorie " +
+            "WHERE bc.id_boutique = :boutiqueId", nativeQuery = true)
+    Set<Categorie> findCategoriesByBoutiqueId(@Param("boutiqueId") Integer boutiqueId);
 
 }

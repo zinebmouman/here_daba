@@ -267,14 +267,32 @@ public class BoutiqueController {
      * Obtenir les catégories d'une boutique
      */
     @GetMapping("/{boutiqueId}/categories")
-    public ResponseEntity<Set<Categorie>> getBoutiqueCategories(@PathVariable Integer boutiqueId) {
+    public ResponseEntity<List<Map<String, String>>> getBoutiqueCategories(@PathVariable Integer boutiqueId) {
         try {
-            return ResponseEntity.ok(boutiqueService.getBoutiqueCategories(boutiqueId));
-        } catch (RuntimeException e) {
-            logger.error("Erreur lors de la récupération des catégories pour la boutique {}", boutiqueId, e);
-            return ResponseEntity.notFound().build();
+            Set<Categorie> categories = boutiqueService.getBoutiqueCategories(boutiqueId);
+
+            // Conversion stricte en Map<String, String>
+            List<Map<String, String>> response = categories.stream()
+                    .map(cat -> {
+                        Map<String, String> map = new HashMap<>();
+                        map.put("idCategorie", String.valueOf(cat.getIdCategorie()));
+                        map.put("nom", String.valueOf(cat.getNom()));
+                        map.put("description", cat.getDescription() != null ? cat.getDescription() : "");
+                        map.put("icon", cat.getIcon() != null ? cat.getIcon() : "");
+                        map.put("customIcon", cat.getCustomIcon() != null ? cat.getCustomIcon() : "");
+                        return map;
+                    })
+                    .toList();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
+
+
+
+
 
     /**
      * Ajouter une catégorie à une boutique
